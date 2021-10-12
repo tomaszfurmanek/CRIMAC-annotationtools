@@ -479,8 +479,8 @@ class work_reader (object):
                                 fraction = list()
                                 if type(species)==list: 
                                     for s in species: 
-                                        species_id.append(species['@ID'])
-                                        fraction.append(species['@fraction'])
+                                        species_id.append(s['@ID'])
+                                        fraction.append(s['@fraction'])
                                 else:
                                     species_id.append(species['@ID'])
                                     fraction.append(species['@fraction'])
@@ -508,8 +508,8 @@ class work_reader (object):
                                     fraction = list()
                                     if type(species)==list: 
                                         for s in species: 
-                                            species_id.append(species['@ID'])
-                                            fraction.append(species['@fraction'])
+                                            species_id.append(s['@ID'])
+                                            fraction.append(s['@fraction'])
                                     else: 
                                         species_id.append(species['@ID'])
                                         fraction.append(species['@fraction'])
