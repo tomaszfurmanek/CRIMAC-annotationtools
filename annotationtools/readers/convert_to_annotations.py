@@ -467,17 +467,23 @@ class work_reader (object):
                             self.school[i].interpretations[ii]=structtype()
                             self.school[i].interpretations[ii].frequency = intr['@frequency']
                             
-                            if 'species' in dir(intr): 
+                            parsespecies=0
+                            try:
+                                intr['species']
+                                parsespecies = 1
+                            except:
+                                parsespecies = 0
+                            if parsespecies>0:
                                 species = intr['species']
                                 species_id = list()
                                 fraction = list()
                                 if type(species)==list: 
                                     for s in species: 
-                                        species_id = np.hstack((species_id,s['@ID']))
-                                        fraction = np.hstack((fraction,s['@fraction']))
-                                else: 
-                                    species_id = np.hstack((species_id,species['@ID']))
-                                    fraction = np.hstack((fraction,species['@fraction']))
+                                        species_id.append(species['@ID'])
+                                        fraction.append(species['@fraction'])
+                                else:
+                                    species_id.append(species['@ID'])
+                                    fraction.append(species['@fraction'])
                             else: 
                                 
                                 species_id = -1
@@ -490,17 +496,23 @@ class work_reader (object):
                             for intr in interpretation: 
                                 self.school[i].interpretations[ii]=structtype()
                                 self.school[i].interpretations[ii].frequency = intr['@frequency']
-                                if 'species' in dir (intr): 
+                                parsespecies=0
+                                try:
+                                    intr['species']
+                                    parsespecies = 1
+                                except:
+                                    parsespecies = 0
+                                if parsespecies>0:
                                     species = intr['species']
                                     species_id = list()
                                     fraction = list()
                                     if type(species)==list: 
                                         for s in species: 
-                                            species_id = np.hstack((species_id,s['@ID']))
-                                            fraction = np.hstack((fraction,s['@fraction']))
+                                            species_id.append(species['@ID'])
+                                            fraction.append(species['@fraction'])
                                     else: 
-                                        species_id = np.hstack((species_id,species['@ID']))
-                                        fraction = np.hstack((fraction,species['@fraction']))
+                                        species_id.append(species['@ID'])
+                                        fraction.append(species['@fraction'])
                                 else: 
                                     species_id = -1
                                     fraction = -1
