@@ -467,13 +467,7 @@ class work_reader (object):
                             self.school[i].interpretations[ii]=structtype()
                             self.school[i].interpretations[ii].frequency = intr['@frequency']
                             
-                            parsespecies=0
-                            try:
-                                intr['species']
-                                parsespecies = 1
-                            except:
-                                parsespecies = 0
-                            if parsespecies>0:
+                            if 'species' in list(intr.keys()):
                                 species = intr['species']
                                 species_id = list()
                                 fraction = list()
@@ -496,13 +490,7 @@ class work_reader (object):
                             for intr in interpretation: 
                                 self.school[i].interpretations[ii]=structtype()
                                 self.school[i].interpretations[ii].frequency = intr['@frequency']
-                                parsespecies=0
-                                try:
-                                    intr['species']
-                                    parsespecies = 1
-                                except:
-                                    parsespecies = 0
-                                if parsespecies>0:
+                                if 'species' in list(intr.keys()):
                                     species = intr['species']
                                     species_id = list()
                                     fraction = list()
