@@ -3,7 +3,7 @@
 
 #Load som packages
 import numpy as np
-import xmltodict,os, struct
+import xmltodict,os, struct, sys
 from datetime import datetime
 from echolab2.instruments import EK60, EK80
 import pandas as pd
@@ -216,7 +216,6 @@ class work_reader (object):
         #Procesing the information for exclude region
         ####################################################################
         
-        #if not not(doc['regionInterpretation']['exclusionRanges']):
         #checking if the attribute is not missing (null) and if it is not empty
         parseelement = 0
         try:
@@ -259,7 +258,6 @@ class work_reader (object):
         
         #check if there is any inforamtion of erased masks
         
-        #if not not(doc['regionInterpretation']['masking']):
         #checking if the attribute is not missing (null) and if it is not empty
         parseelement=0
         try:
@@ -378,26 +376,10 @@ class work_reader (object):
                         intr = interpretation
                         self.school[i].interpretations[ii]=structtype()
                         self.school[i].interpretations[ii].frequency = intr['@frequency']
-                        species = intr['species']
-                        species_id = list()
-                        fraction = list()
-                        if type(species)==list: 
-                            for s in species: 
-                                species_id = np.hstack((species_id,s['@ID']))
-                                fraction = np.hstack((fraction,s['@fraction']))
+                        if not len(set(list(intr.keys())).intersection(set(['species','@species'])))>0: 
+                            self.school[i].interpretations[ii].species_id='-1'
+                            self.school[i].interpretations[ii].fraction='1'
                         else: 
-                            species_id = np.hstack((species_id,species['@ID']))
-                            fraction = np.hstack((fraction,species['@fraction']))
-                            
-                        self.school[i].interpretations[ii].species_id=species_id
-                        self.school[i].interpretations[ii].fraction=fraction
-                        
-                    else: 
-                        #set the number of interpretated frequecies
-                        self.school[i].interpretations = [None] * len(interpretation)
-                        for intr in interpretation: 
-                            self.school[i].interpretations[ii]=structtype()
-                            self.school[i].interpretations[ii].frequency = intr['@frequency']
                             species = intr['species']
                             species_id = list()
                             fraction = list()
@@ -408,8 +390,35 @@ class work_reader (object):
                             else: 
                                 species_id = np.hstack((species_id,species['@ID']))
                                 fraction = np.hstack((fraction,species['@fraction']))
+                                
                             self.school[i].interpretations[ii].species_id=species_id
                             self.school[i].interpretations[ii].fraction=fraction
+                        
+                    else: 
+                        #set the number of interpretated frequecies
+                        self.school[i].interpretations = [None] * len(interpretation)
+                        for intr in interpretation: 
+                            species_id = list()
+                            fraction = list()
+                            if not len(set(list(intr.keys())).intersection(set(['species','@species'])))>0: 
+                                self.school[i].interpretations[ii]=structtype()
+                                self.school[i].interpretations[ii].frequency = intr['@frequency']
+                                self.school[i].interpretations[ii].species_id='-1'
+                                self.school[i].interpretations[ii].fraction='1'
+                                    
+                            else: 
+                                self.school[i].interpretations[ii]=structtype()
+                                self.school[i].interpretations[ii].frequency = intr['@frequency']
+                                species = intr['species']
+                                if type(species)==list: 
+                                    for s in species: 
+                                        species_id = np.hstack((species_id,s['@ID']))
+                                        fraction = np.hstack((fraction,s['@fraction']))
+                                else: 
+                                    species_id = np.hstack((species_id,species['@ID']))
+                                    fraction = np.hstack((fraction,species['@fraction']))
+                                self.school[i].interpretations[ii].species_id=species_id
+                                self.school[i].interpretations[ii].fraction=fraction
                             
                             ii=ii+1
                 else: 
@@ -418,8 +427,9 @@ class work_reader (object):
                     self.school[i].interpretations.frequency = -1
                     self.school[i].interpretations.species_id = -1
                     self.school[i].interpretations.fraction = -1
-                         
-                        
+                    
+                    
+                    
                 #Print the interpretation mask of each school
                 self.school[i].relativePingNumber=list()
                 self.school[i].min_depth = list()
@@ -467,7 +477,7 @@ class work_reader (object):
                             self.school[i].interpretations[ii]=structtype()
                             self.school[i].interpretations[ii].frequency = intr['@frequency']
                             
-                            if 'species' in list(intr.keys()):
+                            if 'species' in list(intr.keys()): 
                                 species = intr['species']
                                 species_id = list()
                                 fraction = list()
@@ -475,7 +485,7 @@ class work_reader (object):
                                     for s in species: 
                                         species_id.append(s['@ID'])
                                         fraction.append(s['@fraction'])
-                                else:
+                                else: 
                                     species_id.append(species['@ID'])
                                     fraction.append(species['@fraction'])
                             else: 
@@ -490,7 +500,8 @@ class work_reader (object):
                             for intr in interpretation: 
                                 self.school[i].interpretations[ii]=structtype()
                                 self.school[i].interpretations[ii].frequency = intr['@frequency']
-                                if 'species' in list(intr.keys()):
+                                
+                                if 'species' in list(intr.keys()): 
                                     species = intr['species']
                                     species_id = list()
                                     fraction = list()
@@ -706,7 +717,7 @@ class work_reader (object):
                         self.layer[i].interpretation.species_id = list()
                         self.layer[i].interpretation.fraction = list()
                         
-                        if 'species' in dir(interpretation): 
+                        if 'species' in list(interpretation.keys()): 
                             species = interpretation['species']
                             if type(species)==list: 
                                 for spec in species: 
@@ -883,309 +894,6 @@ class work_reader (object):
             
             
             
-            
-            
-#            
-#
-#class work_to_annotation_old(object): 
-#    
-#    
-#    """
-#    Function for converting the internal python structure of the work file to 
-#    annotation format.
-#    
-#    Author: 
-#        Sindre Vatnehol
-#        Institue of Marine Research
-#        mail: sindre.vatnehol@hi.no
-#    
-#    
-#    Input: 
-#        work:               the internal work structure defined in work_reader
-#        index_file:         file name or file path of a .idx file
-#        correct_time:       correct the time differences between raw and work file (for debugging). Default to True.
-#        
-#    Output: 
-#        Tree/list structure for storing the interpretation masks in annotation format
-#    
-#    
-#    
-#    Internal datastructure description: 
-#        self.info                   - defining a datastructure to include general information
-#        self.info.numberOfPings     - integer including the number of pings in the raw file
-#        self.info.timeFirstPing     - integer of the time of first ping given in nanoseconds since 1601
-#        self.info.ping_time         - list of the time of each ping given in nanoseconds since 1601
-#        self.info.channel_names     - list containing the name of each channel
-#        
-#        
-#        
-#        self.mask                      - list of datastructures including the interpretation and masks
-#        self.mask[i]                    - the datastructure of the i'th mask 
-#        self.mask[i].region_id          - str containing the ID of the mask 
-#        self.mask[i].region_name        - str containing the name of the region, currently not used
-#        self.mask[i].region_provenance  - str containing the provenance, here it is 'LSSS'
-#        self.mask[i].region_type        - str describing the type, here it is 'no data', 'analysis'
-#        self.mask[i].region_channels    - list of all channels the interpretation is used on, i.e. 1
-#        self.mask[i].regions            - list currently not used
-#        self.mask[i].start_time         - time of the first ping in the mask given in nanoseconds since 1601
-#        self.mask[i].end_time           - time of the lsat ping in the mask given in nanoseconds since 1601 
-#        self.mask[i].max_depth          - integer of the maximum depth/range of the mask
-#        self.mask[i].min_depth          - integer of the minimum depth/range of the mask
-#        self.mask[i].mask_times         - = self.info.ping_time[((self.info.ping_time>=self.mask[mask_i].start_time) & (self.info.ping_time<=self.mask[mask_i].end_time))]
-#        self.mask[i].priority = 1
-#        self.mask[i].mask_depth         - list of paired depths
-#    
-#        
-#        
-#    """
-#    
-#    def __init__(self,work,raw_filename = ''): 
-#        
-#        
-#        
-#        #Define a structure type that is used to output the data
-#        class structtype(): 
-#            pass
-#        
-#        
-#        
-#        
-#        def depthConverter(depth): 
-#            depth = depth.split(' ')
-#            for idx in range(len(depth)):
-#                if idx>0: 
-#                    depth[idx]=float(depth[idx-1])+float(depth[idx])
-#                else: 
-#                    depth[idx]=float(depth[idx])
-#                
-#            return(depth)
-#    
-#            
-#            # Detect FileType
-#        def ek_detect(fname):
-#            with open(fname, 'rb') as f:
-#                file_header = f.read(8)
-#                file_magic = file_header[-4:]
-#                if file_magic.startswith(b'XML'):
-#                    return "EK80"
-#                elif file_magic.startswith(b'CON'):
-#                    return "EK60"
-#                else:
-#                    return None
-#            
-#            
-#        def ek_read(fname):
-#            if ek_detect(fname) == "EK80":
-#                ek80_obj = EK80.EK80()
-#                ek80_obj.read_raw(fname)
-#                return ek80_obj
-#            elif ek_detect(fname) == "EK60":
-#                ek60_obj = EK60.EK60()
-#                ek60_obj.read_raw(fname)
-#                return ek60_obj
-#                    
-#            
-#            
-#        def UNIXtime_to_epoce(timestamp):
-#            '''Helper function to convert time stamps in work file to epoc since 1601'''
-#            return((datetime.fromtimestamp(timestamp) - datetime(1601, 1, 1)).total_seconds()*1e9)
-#            
-#            
-#            
-#        #Read ek data    
-#        data = ek_read(raw_filename)
-#        
-#        
-#        # Placeholder for all frequrncy
-#        all_frequency = []
-#        
-#        
-#        #make a list of the different ping times per channel
-#        #It may be different between each channel if they are pinging sequentually
-#        ping_time = [None] * data.n_channels
-#        for i in range(data.n_channels):
-#            p_time = data.get_channel_data(channel_numbers=i+1)[i+1][0].ping_time
-#            ping_time[i] = np.array([(datetime.fromtimestamp(time.astype('uint64')/1000)- datetime(1601, 1, 1)).total_seconds()*1e9 for time in p_time])
-#
-#
-#        #If all ping times for each channel is equal, just make one vector
-##        keep_list= False
-#        p_time = []
-#        for i in range(1,data.n_channels):
-#            p_time = np.hstack((p_time,ping_time[i]))
-##            if len(ping_time[0])==len(ping_time):
-##                if (ping_time[0]==ping_time[i]).all()==False:
-##                    keep_list = True
-##                    break
-##            else: 
-##                keep_list=True
-##                break
-#            
-##        keep_list==False
-##        if keep_list==False: 
-##            ping_time=ping_time[1]
-##        
-#        ping_time = np.sort(np.unique(p_time))
-#        channel_ids=data.channel_ids
-#        
-#        
-#        #some tests
-#        if not len(ping_time)==work.info.numberOfPings: 
-#            print('Warning: Number of pings in raw and work dont match!')
-#        
-#        
-#        
-#        ####################################################################
-#        #Info section
-#        ####################################################################
-#        self.info = structtype()
-#        self.info.numberOfPings=work.info.numberOfPings
-#        self.info.timeFirstPing=UNIXtime_to_epoce(work.info.timeFirstPing)
-#        self.info.ping_time = ping_time
-#        self.info.channel_names = list(data.channel_ids)
-#        
-#            
-#        
-#        ####################################################################
-#        # Processing the bubble information
-#        ####################################################################
-#        
-#        
-##        self.info.bubble =work.info.bubble
-##            
-##        
-##        bubble = doc['regionInterpretation']['bubbleCorrectionRanges']['timeRange']
-##        self.info.bubble = structtype()
-##        self.info.bubble.start = float(bubble['@start'])
-##        self.info.bubble.numberOfPings = int(bubble['@numberOfPings'])
-##        self.info.bubble.CorrectionValue = float(bubble['@bubbleCorrectionValue'])
-##        
-#        
-#        
-#        ####################################################################
-#        #Define the maskoutput
-#        ####################################################################
-#        self.mask = list()
-#        
-#        
-#        
-#        ####################################################################
-#        #Add excluded region
-#        ####################################################################
-#        if "excluded" in dir(work) == True: 
-#            for i in range(len(work.exclude.start_time)): 
-#                self.mask.append(1)
-#                mask_i = len(self.mask)-1
-#                self.mask[mask_i] = structtype()
-#                self.mask[mask_i].region_id = list()
-#                self.mask[mask_i].region_name = list()
-#                self.mask[mask_i].region_provenance= 'LSSS'
-#                self.mask[mask_i].region_type= 'no_data'
-#                self.mask[mask_i].region_channels= self.info.channel_names
-#                self.mask[mask_i].regions= list()
-#                self.mask[mask_i].start_time= UNIXtime_to_epoce(work.exclude.start_time[i])
-#                self.mask[mask_i].end_time = self.info.ping_time[np.int(np.where(self.mask[mask_i].start_time==self.info.ping_time)[0])+int(work.exclude.numOfPings[i])-1]
-#                self.mask[mask_i].mask_times = self.info.ping_time[((self.info.ping_time>=self.mask[mask_i].start_time) & (self.info.ping_time<=self.mask[mask_i].end_time))]
-#                self.mask[mask_i].max_depth = 9999.9
-#                self.mask[mask_i].min_depth = 0.0
-#                self.mask[mask_i].mask_depth = [[self.mask[mask_i].min_depth,self.mask[mask_i].max_depth] for x in range(len(self.mask[mask_i].mask_times))]
-#                self.mask[mask_i].priority = 1
-#
-#
-#
-#
-#        ####################################################################
-#        #Add erased region
-#        ####################################################################
-#        if "masks" in dir(work.erased) == True: 
-#            for i in range(len(work.erased.masks)):
-#                self.mask.append(1)
-#                mask_i = len(self.mask)-1
-#                self.mask[mask_i] = structtype()
-#                self.mask[mask_i].region_id = list()
-#                self.mask[mask_i].region_name = list()
-#                self.mask[mask_i].region_provenance= 'LSSS'
-#                self.mask[mask_i].region_type= 'no_data'
-#                self.mask[mask_i].regions= list()
-#                self.mask[mask_i].region_channels=self.info.channel_names[work.erased.masks[i].channelID-1]
-#                self.mask[mask_i].mask_times = [ping_time[int(p)] for p in work.erased.masks[i].pingOffset ]
-#                self.mask[mask_i].start_time = self.mask[mask_i].mask_times[0]
-#                self.mask[mask_i].end_time = self.mask[mask_i].mask_times[-1]
-#                self.mask[mask_i].mask_depth = np.array([np.array(depthConverter(d)) for d in work.erased.masks[i].depth])
-#                self.mask[mask_i].min_depth = min([min(d) for d in self.mask[mask_i].mask_depth])
-#                self.mask[mask_i].max_depth = min([min(d) for d in self.mask[mask_i].mask_depth])
-#                self.mask[mask_i].priority = 1
-#                    
-#            
-#            
-#            
-#        
-#        ####################################################################
-#        #Add school mask
-#        ####################################################################
-#        for i in range(len(work.school)): 
-#            self.mask.append(1)
-#            mask_i = len(self.mask)-1
-#            self.mask[mask_i] = structtype()
-#            self.mask[mask_i].region_id = list()
-#            self.mask[mask_i].region_name = list()
-#            self.mask[mask_i].region_provenance= 'LSSS'
-#            self.mask[mask_i].region_type= 'analysis'
-#            self.mask[mask_i].regions= list()
-#            self.mask[mask_i].region_id = work.school[i].objectNumber
-#            self.mask[mask_i].mask_times = [ping_time[int(p)-1] for p in work.school[i].relativePingNumber]
-#            self.mask[mask_i].start_time = self.mask[mask_i].mask_times[0]
-#            self.mask[mask_i].end_time = self.mask[mask_i].mask_times[-1]
-#            self.mask[mask_i].min_depth = min(work.school[i].min_depth )
-#            self.mask[mask_i].max_depth = max(work.school[i].max_depth)
-#            self.mask[mask_i].mask_depth=[list(a) for a in zip(work.school[i].min_depth ,work.school[i].max_depth)]
-#           
-#            if type(work.school[i].interpretations) == list:
-#                self.mask[mask_i].region_channels=[ip for f in work.school[i].interpretations for ip in channel_ids if f.frequency in ip]
-#                self.mask[mask_i].region_category_ids = [(c.species_id) for c in work.school[i].interpretations]
-#                self.mask[mask_i].region_category_names = [(c.species_id) for c in work.school[i].interpretations]
-#                self.mask[mask_i].region_category_proportions = [(c.fraction) for c in work.school[i].interpretations]
-#            else: 
-#                self.mask[mask_i].region_category_ids=(work.school[i].interpretations.species_id)
-#                self.mask[mask_i].region_category_names = (work.school[i].interpretations.species_id)
-#                self.mask[mask_i].region_category_proportions = (work.school[i].interpretations.fraction)
-#                self.mask[mask_i].region_channels=[ip for ip in channel_ids if work.school[i].interpretations.frequency in ip]
-#            self.mask[mask_i].priority = 2
-#            
-#            
-#        
-#            
-#        ####################################################################
-#        #Add layer mask
-#        ####################################################################
-#        for i in range(len(work.layer)):
-#            if "boundaries" in dir(work.layer[i]):
-#                self.mask.append(1)
-#                mask_i = len(self.mask)-1
-#                self.mask[mask_i] = structtype()
-#                self.mask[mask_i].region_id = list()
-#                self.mask[mask_i].region_name = list()
-#                self.mask[mask_i].region_provenance= 'LSSS'
-#                self.mask[mask_i].region_type= 'analysis'
-#                self.mask[mask_i].regions= list()
-#    #            self.mask[mask_i].region_id = work.school[i].objectNumber
-#                self.mask[mask_i].mask_times = [ping_time[int(p)] for p in work.layer[i].boundaries.ping]
-#                self.mask[mask_i].start_time = self.mask[mask_i].mask_times[0]
-#                self.mask[mask_i].end_time = self.mask[mask_i].mask_times[-1]
-#                self.mask[mask_i].min_depth = min(work.layer[i].boundaries.depths_upper)
-#                self.mask[mask_i].max_depth = max(work.layer[i].boundaries.depths_lower)
-#                self.mask[mask_i].mask_depth=[list(a) for a in zip(work.layer[i].boundaries.depths_upper ,work.layer[i].boundaries.depths_lower)]
-#                if "interpretation" in dir(work.layer[i]):
-#                    if "frequency" in dir(work.layer[i].interpretation):
-#                        self.mask[mask_i].region_channels=[i for f in work.layer[i].interpretation for i in channel_ids if f.frequency in i]
-#                        self.mask[mask_i].region_category_ids = [c.species_id for c in work.layer[i].interpretation]
-#                        self.mask[mask_i].region_category_names = [c.species_id for c in work.layer[i].interpretation]
-#                        self.mask[mask_i].region_category_proportions = [c.fraction for c in work.layer[i].interpretation]
-##            self.mask[mask_i].region_channels=[list(data.get_channel_data().keys()).index(ip)  for i.p in list(data.get_channel_data().keys()) if work.layer[i].interpretation.frequency in ip]
-#                
-#            self.mask[mask_i].priority = 3
-#
-
 
 
 class work_to_annotation (object):
@@ -1225,10 +933,10 @@ class work_to_annotation (object):
         while run:
             try:
                 idx_datagram = fid.read(1)
-                ##### not working
-                #raw_string=struct.unpack('=4sLLLdddLL', idx_datagram)
-                #p_time = nt_to_unix((raw_string[1], raw_string[2]),return_datetime=False)
                 p_time = nt_to_unix((int(idx_datagram['low_date']), int(idx_datagram['high_date'])), return_datetime=False)
+                #the lines below may be an option for some older files  
+                #raw_string=struct.unpack('=4sLLLdddLL', idx_datagram)                 
+                #p_time = nt_to_unix((raw_string[1], raw_string[2]),return_datetime=False)
                 ping_time_IDX.append(float(round(decimal.Decimal(p_time), 3)))
             except:
                 run = False
@@ -1399,81 +1107,224 @@ class work_to_annotation (object):
         ####################################################################
         #Process the layer mask
         ####################################################################
+        
+        
         if 'layer' in dir(work):
             for i in range(len(work.layer)):
-                if "boundaries" in dir(work.layer[i]):
-                    mask_depth=[list(a) for a in zip(work.layer[i].boundaries.depths_upper ,work.layer[i].boundaries.depths_lower)]
-                    mask_times = [ping_time[int(p)] for p in work.layer[i].boundaries.ping]
+                
+                try:
                     
-                    
-                    region_channels = []
-                    region_channels_id = []
-                    region_category_names = []
-                    region_category_proportions = []
-                    reg_chn_idx=0
-                    if "interpretation" in dir(work.layer[i]):
-                        if type(work.layer[i].interpretation) == list: 
-                            for intr in work.layer[i].interpretation: 
-                                if "frequency" in dir(intr):
-                                    if intr.frequency!= -1:
-                                        region_channels=np.hstack((region_channels,[i for i in channel_ids if intr.frequency in i][0]))
-                                        region_category_names=np.hstack((region_category_names,intr.species_id))
-                                        region_category_proportions = np.hstack((region_category_proportions,intr.fraction))
-                                        if type(intr.fraction)== float:
-                                            region_channels_id = np.hstack((region_channels_id,np.repeat(reg_chn_idx,1)))
-                                        elif type(intr.fraction)== int: 
-                                            region_channels_id = np.hstack((region_channels_id,np.repeat(reg_chn_idx,1)))
+                    if "boundaries" in dir(work.layer[i]):
+                        mask_depth=[list(a) for a in zip(work.layer[i].boundaries.depths_upper ,work.layer[i].boundaries.depths_lower)]
+                        mask_times = [ping_time[int(p)] for p in work.layer[i].boundaries.ping]
+
+
+                        region_channels = []
+                        region_channels_id = []
+                        region_category_names = []
+                        region_category_proportions = []
+                        reg_chn_idx=0
+                        #print (dir(work.layer[i]))
+                        if "interpretation" in dir(work.layer[i]):
+                            
+                            if type(work.layer[i].interpretation) == list:
+                                for intr in work.layer[i].interpretation:
+                                    
+                                    run1=0
+                                    if intr!=None:
+                                        if "frequency" in dir(intr):
+                                            run1=1
+
+                                    if run1==1:
+                                        if intr.frequency!= -1:
+                                            
+                                            #region_channels=np.hstack((region_channels,[i for i in channel_ids if intr.frequency in i][0]))
+                                            region_channels.append(([i for i in channel_ids if intr.frequency in i][0]))
+                                            region_category_names.append(intr.species_id)
+                                            
+                                            region_category_proportions.append(intr.fraction)
+                                            
+                                            if type(intr.fraction)== float:
+                                                #region_channels_id.append((np.repeat(reg_chn_idx,1)))
+                                                region_channels_id.append(reg_chn_idx)
+                                            elif type(intr.fraction)== int:
+                                                #region_channels_id.append((np.repeat(reg_chn_idx,1)))
+                                                region_channels_id.append(reg_chn_idx)
+                                            else:
+                                                #region_channels_id.append(( np.repeat(reg_chn_idx,len(intr.fraction))))
+                                                region_channels_id.append([reg_chn_idx]*20)
+                                            
+                                            reg_chn_idx+=1
+                                            
                                         else:
-                                            region_channels_id = np.hstack((region_channels_id,np.repeat(reg_chn_idx,len(intr.fraction))))
+                                            region_channels.append(-1)
+                                            region_category_names.append(-1)
+                                            region_category_proportions.append(-1)
+                                            region_channels_id.append(reg_chn_idx)
+                                            reg_chn_idx+=1
+                                        
+                                        
+                                    else:
+                                        region_channels.append("-1")
+                                        region_category_names.append("-1")
+                                        region_category_proportions.append("-1")
+                                        region_channels_id.append(reg_chn_idx)
                                         reg_chn_idx+=1
-                                    else: 
-                                        region_channels = np.hstack((region_channels,-1))
-                                        region_category_names=np.hstack((region_category_names,-1))
-                                        region_category_proportions = np.hstack((region_category_proportions,-1))
-                                        region_channels_id = np.hstack((region_channels_id,reg_chn_idx))
-                                        reg_chn_idx+=1
-                                else: 
+                            else:
+                                
+                                intr=work.layer[i].interpretation
+                                
+                                if "frequency" in dir(intr):
+                                    region_channels=np.hstack((region_channels,[i for i in channel_ids if intr.frequency in i] ))
+                                    region_category_names=np.hstack((region_category_names,intr.species_id))
+                                    region_category_proportions = np.hstack((region_category_proportions,intr.fraction))
+                                    region_channels_id = np.hstack((region_channels_id,np.repeat(reg_chn_idx,len(intr.fraction))))
+                                    reg_chn_idx+=1
+                                    
+                                else:
                                     region_channels = np.hstack((region_channels,-1))
                                     region_category_names=np.hstack((region_category_names,-1))
                                     region_category_proportions = np.hstack((region_category_proportions,-1))
                                     region_channels_id = np.hstack((region_channels_id,reg_chn_idx))
                                     reg_chn_idx+=1
-                        else: 
-                            intr=work.layer[i].interpretation
-                            if "frequency" in dir(intr):
-                                region_channels=np.hstack((region_channels,[i for i in channel_ids if intr.frequency in i] ))
-                                region_category_names=np.hstack((region_category_names,intr.species_id))
-                                region_category_proportions = np.hstack((region_category_proportions,intr.fraction))
-                                region_channels_id = np.hstack((region_channels_id,np.repeat(reg_chn_idx,len(intr.fraction))))
-                                reg_chn_idx+=1
-                            else: 
-                                region_channels = np.hstack((region_channels,-1))
-                                region_category_names=np.hstack((region_category_names,-1))
-                                region_category_proportions = np.hstack((region_category_proportions,-1))
-                                region_channels_id = np.hstack((region_channels_id,reg_chn_idx))
-                                reg_chn_idx+=1
-                    else:
-                        region_channels = np.hstack((region_channels,-1))
-                        region_category_names=np.hstack((region_category_names,-1))
-                        region_category_proportions = np.hstack((region_category_proportions,-1))
-                        region_channels_id = np.hstack((region_channels_id,reg_chn_idx))
-                        reg_chn_idx+=1
-
+                                    
+                        else:
                             
-                    for ii in range(len(mask_depth)): 
-                        m_depth = np.array(mask_depth[ii])
-                        m_depth=m_depth.reshape(-1,2)
-                        for iii in range(m_depth.shape[0]):
-                            for ik in range(len(region_channels)): 
-                                for ikk in np.where(region_channels_id==ik)[0]:
-                                    pingTime.append(np.datetime64(unix_to_datetime(mask_times[ii])))
-                                    mask_depth_upper.append(min(m_depth[iii,:]))
-                                    mask_depth_lower.append(max(m_depth[iii,:]))
-                                    priority.append(3)
-                                    ID.append('Layer-' + str(i))
-                                    acousticCat.append(int(region_category_names[ikk]))
-                                    proportion.append(float(region_category_proportions[ikk]))
-                                    ChannelID.append(region_channels[ik])
+                            region_channels = np.hstack((region_channels,-1))
+                            region_category_names=np.hstack((region_category_names,-1))
+                            region_category_proportions = np.hstack((region_category_proportions,-1))
+                            region_channels_id = np.hstack((region_channels_id,reg_chn_idx))
+                            reg_chn_idx+=1
+                            
+
+                        #print(len(mask_depth))
+                        #print(mask_depth)
+                        for ii in range(len(mask_depth)):
+                            m_depth = np.array(mask_depth[ii])
+                            m_depth=m_depth.reshape(-1,2)
+                            
+                            for iii in range(m_depth.shape[0]):
+                                for ik in range(len(region_channels)):
+                                    
+                                    sp_prop_c=0
+                                    for sublist in region_category_proportions:
+                                        
+                                        if type(sublist) in [int,float,str,np.float64]: 
+                                            pingTime.append(np.datetime64(unix_to_datetime(mask_times[ii])))
+                                            mask_depth_upper.append(min(m_depth[iii,:]))
+                                            mask_depth_lower.append(max(m_depth[iii,:]))
+                                            priority.append(3)
+                                            ID.append('Layer-' + str(i))
+                                            ChannelID.append(region_channels[ik])
+                                            acousticCat.append(int(region_category_names[sp_prop_c]))
+                                            proportion.append(float(region_category_proportions[sp_prop_c]))
+                                        else: 
+                                            for sp_prop_cc in range(len(sublist)): 
+                                                pingTime.append(np.datetime64(unix_to_datetime(mask_times[ii])))
+                                                mask_depth_upper.append(min(m_depth[iii,:]))
+                                                mask_depth_lower.append(max(m_depth[iii,:]))
+                                                priority.append(3)
+                                                ID.append('Layer-' + str(i))
+                                                ChannelID.append(region_channels[ik])
+                                                acousticCat.append(int(region_category_names[sp_prop_c][sp_prop_cc]))
+                                                proportion.append(float(region_category_proportions[sp_prop_c][sp_prop_cc]))
+                                        sp_prop_c+=1
+                                    #sp_prop_c=0
+                                    #for sp_prop in region_category_names[0]:
+                                    #    pingTime.append(np.datetime64(unix_to_datetime(mask_times[ii])))
+                                    #    mask_depth_upper.append(min(m_depth[iii,:]))
+                                    #    mask_depth_lower.append(max(m_depth[iii,:]))
+                                    #    priority.append(3)
+                                    #    ID.append('Layer-' + str(i))
+                                    #    acousticCat.append(int(region_category_names[0][sp_prop_c]))
+                                    #    proportion.append(float(region_category_proportions[0][sp_prop_c]))
+                                    #    ChannelID.append(region_channels[ik])
+                                    #    #print('Layer-' + str(i))
+                                    #    #print(region_category_names[0][sp_prop_c])
+                                    #    #print(region_category_proportions[0][sp_prop_c])
+                                    #    sp_prop_c=sp_prop_c+1
+                                    #    #print(region_channels[ik])
+                except Exception as e:
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                    print("ERROR: LSSS work file :: work_to_annotation - Process the layer mask " + TypeError + " " + NameError + ValueError)
+                    print(exc_type, fname, exc_tb.tb_lineno)
+
+#        if 'layer' in dir(work):
+#            for i in range(len(work.layer)):
+#                if "boundaries" in dir(work.layer[i]):
+#                    mask_depth=[list(a) for a in zip(work.layer[i].boundaries.depths_upper ,work.layer[i].boundaries.depths_lower)]
+#                    mask_times = [ping_time[int(p)] for p in work.layer[i].boundaries.ping]
+#                    
+#                    
+#                    region_channels = []
+#                    region_channels_id = []
+#                    region_category_names = []
+#                    region_category_proportions = []
+#                    reg_chn_idx=0
+#                    if "interpretation" in dir(work.layer[i]):
+#                        if type(work.layer[i].interpretation) == list: 
+#                            for intr in work.layer[i].interpretation: 
+#                                if "frequency" in list(intr.keys()):
+#                                    if intr.frequency!= -1:
+#                                        region_channels=np.hstack((region_channels,[i for i in channel_ids if intr.frequency in i][0]))
+#                                        region_category_names=np.hstack((region_category_names,intr.species_id))
+#                                        region_category_proportions = np.hstack((region_category_proportions,intr.fraction))
+#                                        if type(intr.fraction)== float:
+#                                            region_channels_id = np.hstack((region_channels_id,np.repeat(reg_chn_idx,1)))
+#                                        elif type(intr.fraction)== int: 
+#                                            region_channels_id = np.hstack((region_channels_id,np.repeat(reg_chn_idx,1)))
+#                                        else:
+#                                            region_channels_id = np.hstack((region_channels_id,np.repeat(reg_chn_idx,len(intr.fraction))))
+#                                        reg_chn_idx+=1
+#                                    else: 
+#                                        region_channels = np.hstack((region_channels,-1))
+#                                        region_category_names=np.hstack((region_category_names,-1))
+#                                        region_category_proportions = np.hstack((region_category_proportions,-1))
+#                                        region_channels_id = np.hstack((region_channels_id,reg_chn_idx))
+#                                        reg_chn_idx+=1
+#                                else: 
+#                                    region_channels = np.hstack((region_channels,-1))
+#                                    region_category_names=np.hstack((region_category_names,-1))
+#                                    region_category_proportions = np.hstack((region_category_proportions,-1))
+#                                    region_channels_id = np.hstack((region_channels_id,reg_chn_idx))
+#                                    reg_chn_idx+=1
+#                        else: 
+#                            intr=work.layer[i].interpretation
+#                            if "frequency" in list(intr.keys()):
+#                                region_channels=np.hstack((region_channels,[i for i in channel_ids if intr.frequency in i] ))
+#                                region_category_names=np.hstack((region_category_names,intr.species_id))
+#                                region_category_proportions = np.hstack((region_category_proportions,intr.fraction))
+#                                region_channels_id = np.hstack((region_channels_id,np.repeat(reg_chn_idx,len(intr.fraction))))
+#                                reg_chn_idx+=1
+#                            else: 
+#                                region_channels = np.hstack((region_channels,-1))
+#                                region_category_names=np.hstack((region_category_names,-1))
+#                                region_category_proportions = np.hstack((region_category_proportions,-1))
+#                                region_channels_id = np.hstack((region_channels_id,reg_chn_idx))
+#                                reg_chn_idx+=1
+#                    else:
+#                        region_channels = np.hstack((region_channels,-1))
+#                        region_category_names=np.hstack((region_category_names,-1))
+#                        region_category_proportions = np.hstack((region_category_proportions,-1))
+#                        region_channels_id = np.hstack((region_channels_id,reg_chn_idx))
+#                        reg_chn_idx+=1
+#
+#                            
+#                    for ii in range(len(mask_depth)): 
+#                        m_depth = np.array(mask_depth[ii])
+#                        m_depth=m_depth.reshape(-1,2)
+#                        for iii in range(m_depth.shape[0]):
+#                            for ik in range(len(region_channels)): 
+#                                for ikk in np.where(region_channels_id==ik)[0]:
+#                                    pingTime.append(np.datetime64(unix_to_datetime(mask_times[ii])))
+#                                    mask_depth_upper.append(min(m_depth[iii,:]))
+#                                    mask_depth_lower.append(max(m_depth[iii,:]))
+#                                    priority.append(3)
+#                                    ID.append('Layer-' + str(i))
+#                                    acousticCat.append(int(region_category_names[ikk]))
+#                                    proportion.append(float(region_category_proportions[ikk]))
+#                                    ChannelID.append(region_channels[ik])
                                 
 
         # =============================================================================
@@ -1507,4 +1358,4 @@ class work_to_annotation (object):
                                     'channel_id': str})
         else:
             self.df_ = None
-     
+                 
